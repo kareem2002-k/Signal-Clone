@@ -7,6 +7,7 @@ import LogIn from './Screens/LogIn';
 import Register from './Screens/Register';
 import Home from './Screens/Home';
 import AddChat from './Screens/AddChat';
+import Chat from './Screens/Chat';
 
 export default function App() {
 
@@ -25,6 +26,7 @@ export default function App() {
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="AddChat" component={AddChat} />
+        <Stack.Screen name="Chat" component={Chat} />
       </Stack.Navigator>
 
     </NavigationContainer>
