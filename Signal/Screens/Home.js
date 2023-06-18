@@ -36,6 +36,8 @@ const Home = ({navigation}) => {
         };
       }, []);
 
+   
+
 
 
     const signOutUser = () => {

@@ -31,6 +31,7 @@ const Register = ({navigation}) => {
         .then((userCredential) => {
             userCredential.user.updateProfile({
                 displayName: name,
+                
 
 
 

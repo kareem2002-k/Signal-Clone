@@ -1,5 +1,5 @@
 import { Keyboard, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useLayoutEffect } from 'react'
 import { KeyboardAvoidingView } from 'react-native'
 import { Platform } from 'react-native'
@@ -9,13 +9,25 @@ import { TouchableOpacity } from 'react-native'
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from 'react'
 import { db, auth } from '../Config/firebase'
-import {collection, addDoc, doc, setDoc} from "firebase/firestore";
+import {collection, addDoc, doc, setDoc , serverTimestamp} from "firebase/firestore";
+import firebase from "firebase/app";
+import { onSnapshot, query, orderBy } from "firebase/firestore";
+import { getDocs, limit } from "firebase/firestore";
+import { Avatar } from 'react-native-elements/dist/avatar/Avatar'
+import { useRef } from 'react'
 
 
 const Chat = ({navigation , route}) => {
 
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState([]);
+    const scrollViewRef = useRef();
+
+    useLayoutEffect(() => {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }, [messages]);
+
+
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -44,16 +56,62 @@ const Chat = ({navigation , route}) => {
         });
     }, [navigation]);
 
-    const sendMessage = () => {
-        Keyboard.dismiss();
-        db.collection("chats").doc(route.params.id).collection("messages").add({
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            message: input,
-            displayName: auth.currentUser.displayName,
-            email: auth.currentUser.email,
+    useLayoutEffect(() => {
+        const fetchMessages = async () => {
+          const querySnapshot = await getDocs(
+            query(
+              collection(db, 'chats', route.params.id, 'messages'),
+              orderBy('timestamp'),  // Assuming 'timestamp' is the field you want to order the messages by
+            )
+          );
+    
+          setMessages(
+            querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              data: doc.data(),
+            }))
+          );
+        };
+    
+        fetchMessages();
+    
+        const unsubscribe = onSnapshot(
+          query(
+            collection(db, 'chats', route.params.id, 'messages'),
+            orderBy('timestamp')  // Assuming 'timestamp' is the field you want to order the messages by
+          ),
+          (snapshot) => {
+            setMessages(
+              snapshot.docs.map((doc) => ({
+                id: doc.id,
+                data: doc.data(),
+              }))
+            );
+          }
+        );
+    
+        return unsubscribe;
+      }, [route.params]);
 
-        });
-        setInput("");
+
+
+    const sendMessage = async () => {
+        Keyboard.dismiss();
+        const messagesRef = collection(db, 'chats', route.params.id, 'messages');
+        const messageData = {
+          timestamp: serverTimestamp(),
+          message: input,
+          displayName: auth.currentUser.displayName,
+            email: auth.currentUser.email,
+        };
+      
+        try {
+          await addDoc(messagesRef, messageData);
+          setInput('');
+        } catch (error) {
+          console.error('Error sending message:', error);
+        }
+
 
     };
 
@@ -71,9 +129,27 @@ const Chat = ({navigation , route}) => {
             keyboardVerticalOffset={90}
         >
             <>
-                <ScrollView>
-                 <Text>Chat Screen</Text>
-                </ScrollView>
+            <ScrollView
+      ref={scrollViewRef}
+      contentContainerStyle={styles.scrollViewContent}
+      onContentSizeChange={() =>
+        scrollViewRef.current.scrollToEnd({ animated: true })
+      }
+    >
+      {messages.map(({ id, data }) => (
+        <View
+          key={id}
+          style={data.email !== auth.currentUser.email ? styles.receiver : styles.sender}
+        >
+          <Text style={data.email !== auth.currentUser.email ? styles.receiverText : styles.senderText}>
+            {data.message}
+          </Text>
+          <Text style={data.email !== auth.currentUser.email ? styles.receiverName : styles.senderName}>
+            {data.email}
+          </Text>
+        </View>
+      ))}
+    </ScrollView>
                 <View style={styles.footer}>
                     <TextInput
                         placeholder="Signal Message"
@@ -81,7 +157,7 @@ const Chat = ({navigation , route}) => {
                         value={input}
                         onChangeText={(text) => setInput(text)}
                         onSubmitEditing={sendMessage}
-                        
+
                     />
                  
                     <TouchableOpacity  onPress={sendMessage} activeOpacity={0.5}>  
@@ -121,6 +197,50 @@ const styles = StyleSheet.create({
         color: "grey",
         borderRadius: 30,
     },
+    receiverText: {
+        color: "black",
+        fontWeight: "500",
+        marginLeft: 10,
+    },
+    senderText: {
+        color: "white",
+        fontWeight: "500",
+        marginLeft: 10,
+    },
+    senderName: {
+        left: 10,
+        paddingRight: 10,
+        fontSize: 10,
+        color: "white",
+    },
+    receiver: {
+        padding: 15,
+        backgroundColor: "#ECECEC",
+        alignSelf: "flex-end",
+        borderRadius: 20,
+        marginRight: 15,
+        marginBottom: 20,
+        maxWidth: "80%",
+        position: "relative",
+    },
+    sender: {
+        padding: 15,
+        backgroundColor: "#2B68E6",
+        alignSelf: "flex-start",
+        borderRadius: 20,
+        margin: 15,
+        maxWidth: "80%",
+        position: "relative",
+    },
+    receiverName: {
+        left: 10,
+        paddingRight: 10,
+        fontSize: 10,
+        color: "black",
+    },
+
+
+
 
 
 })
