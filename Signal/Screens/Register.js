@@ -3,6 +3,12 @@ import React from 'react'
 import { Button , Image , TextInput } from 'react-native'
 import { useState } from 'react'
 import { useEffect, useLayoutEffect } from 'react'
+import { auth } from '../Config/firebase'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+
+
+
+
 const Register = ({navigation}) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -20,6 +26,25 @@ const Register = ({navigation}) => {
 
     }, [navigation])
 
+    const handleRegister = () => {
+        createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            userCredential.user.updateProfile({
+                displayName: name,
+
+
+
+            })
+        }
+        )
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            // ..
+        }
+        );
+
+    }
 
   return (
     <KeyboardAvoidingView behavior="padding" style={styles.container} >
@@ -58,7 +83,7 @@ const Register = ({navigation}) => {
       type="password"
 
       />
-      <Button   title="Register"   />
+      <Button onPress={handleRegister} title="Register"   />
 
   </KeyboardAvoidingView>
   )

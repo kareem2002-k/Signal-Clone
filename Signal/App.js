@@ -5,6 +5,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import LogIn from './Screens/LogIn';
 import Register from './Screens/Register';
+import Home from './Screens/Home';
+import AddChat from './Screens/AddChat';
 
 export default function App() {
 
@@ -16,9 +18,13 @@ export default function App() {
   const Stack = createStackNavigator();
   return (
     <NavigationContainer>
-     <Stack.Navigator screenOptions={globalOptions} >
+     <Stack.Navigator 
+      initialRouteName="Home"
+      screenOptions={globalOptions} >
         <Stack.Screen name="LogIn" component={LogIn} />
         <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="AddChat" component={AddChat} />
       </Stack.Navigator>
 
     </NavigationContainer>
